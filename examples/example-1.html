@@ -54,11 +54,13 @@
       function stop(){
         Recorder.stop();
       }
-      
+
       function upload(){
+        Recorder.encode(Recorder.AUDIO_FORMAT_MP3);
         Recorder.upload({
-          url:        "https://example.com/upload",
-          audioParam: "your_file",
+          url:  window.location.origin + "/upload",
+          audioParam: "recording",
+          audioFormat: Recorder.AUDIO_FORMAT_MP3,
           success: function(){
             alert("your file was uploaded!");
           }
