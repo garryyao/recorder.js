@@ -1,15 +1,6 @@
 /*global module:false*/
 module.exports = function (grunt) {
 
-	var EMPTY = "empty:";
-
-	function includeHelper(patterns, regexp, replace) {
-		regexp = new RegExp(regexp);
-			return grunt.util._.map(grunt.file.expand(patterns), function (file) {
-				return "<%= pkg.name %>/" + file.replace(regexp, replace);
-		});
-	}
-
 	// load all grunt tasks matching the `grunt-*` pattern
 	require('load-grunt-tasks')(grunt);
 	grunt.loadNpmTasks("grunt-git-dist");
