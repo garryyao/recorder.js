@@ -340,7 +340,7 @@ package
 			if(format == AUDIO_FORMAT_MP3 && lastEncoding)
 			{
 				fileName = "audio.mp3";
-				ml.addFile(lastEncoding, fileName, audioParam);
+				ml.addFile(lastEncoding, fileName, audioParam, "audio/mpeg");
 				ml.load(uri, false);
 			}
 			else
@@ -348,7 +348,7 @@ package
 				fileName = "audio.wav";
 				if(!wavData)
 					wavData = prepareWav();
-				ml.addFile(wavData, fileName, audioParam);
+				ml.addFile(wavData, fileName, audioParam, "audio/wave");
 				ml.load(uri, false);
 			}
 			
