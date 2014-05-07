@@ -28,7 +28,8 @@ var Recorder = {
     });
 
     this.bind('showFlash', this.options.onFlashSecurity || this._defaultOnShowFlash);
-    this._loadFlash();
+		this.bind('hideFlash', this._defaultOnHideFlash);
+		this._loadFlash();
   },
 
   clear: function(){
@@ -43,7 +44,6 @@ var Recorder = {
 
     this.bind('recordingStart',  this._defaultOnHideFlash);
     this.bind('recordingCancel', this._defaultOnHideFlash);
-    // reload flash to allow mic permission dialog to show again
     this.bind('recordingCancel', this._loadFlash);
 
     this.bind('recordingStart',    options['start']);

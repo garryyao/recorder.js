@@ -30,7 +30,8 @@ package
 	{
 		public static const AUDIO_FORMAT_WAV : int = 0;
 		public static const AUDIO_FORMAT_MP3 : int = 1;
-		
+		public static const RECORD_DATA_TIMEOUT : int = 5;
+
 		private var mainToWorker : Object;
 		private var workerToMain : Object;
 		private var worker : Object;
@@ -123,11 +124,12 @@ package
 			if(microphoneWasMuted){
 				logger.log('showFlashRequired');
 				triggerEvent('showFlash','');
-			}else{
-				notifyRecordingStarted();
 			}
 
 			buffer = new ByteArray();
+
+			// To avoid microphone error (PepperFlashPlayer.plugin: 0x2A052 is not valid resource ID.)
+			microphone.removeEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
 			microphone.addEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
 		}
 		
@@ -398,10 +400,18 @@ package
 				logger.log('Microphone Status Change');
 				if(microphone.muted){
 					triggerEvent('recordingCancel','');
-				}else{
-					if(!isRecording){
-						notifyRecordingStarted();
+				}
+				else {
+					if (microphoneWasMuted) {
+						microphoneWasMuted = false;
+						triggerEvent('hideFlash', '');
 					}
+					flash.utils.setTimeout(function () {
+						if (!isRecording) {
+							microphone.removeEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
+							triggerEvent('recordingCancel', '');
+						}
+					}, RECORD_DATA_TIMEOUT * 1000);
 				}
 			});
 
@@ -410,10 +420,6 @@ package
 		
 		protected function notifyRecordingStarted():void
 		{
-			if(microphoneWasMuted){
-				microphoneWasMuted = false;
-				triggerEvent('hideFlash','');
-			}
 			recordingStartTime = getTimer();
 			triggerEvent('recordingStart', {});
 			logger.log('startRecording');
@@ -456,15 +462,16 @@ package
 		}
 		
 		protected function recordSampleDataHandler(event:SampleDataEvent):void
-		{	
-			while(event.data.bytesAvailable)
-			{	
+		{
+			if(!isRecording)
+				notifyRecordingStarted();
+
+			while (event.data.bytesAvailable) {
 				var sample:Number = event.data.readFloat();
-				
 				buffer.writeFloat(sample);
-				if(buffer.length % 40000 == 0){
-					triggerEvent('recordingProgress', recordingDuration(), 	microphone.activityLevel);
-				}	
+				if (buffer.length % 40000 == 0) {
+					triggerEvent('recordingProgress', recordingDuration(), microphone.activityLevel);
+				}
 			}
 		}
 		
