@@ -34,6 +34,7 @@ var Recorder = {
         }
       });
       this.bind("showFlash", this.options.onFlashSecurity || this._defaultOnShowFlash);
+      this.bind("hideFlash", this._defaultOnHideFlash);
       this._loadFlash();
     },
     clear: function () {
