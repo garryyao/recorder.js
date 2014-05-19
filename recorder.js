@@ -8,6 +8,23 @@ define(function (require, exports, module) {
   var __umodule__ = (function (require, exports, module) {
   
 
+var prefixes = [
+    "",
+    "webkit",
+    "moz",
+    "ms",
+    "o"
+  ];
+var el = document.createElement("div");
+function testProp(prop) {
+  for (var p = 0, pl = prefixes.length; p < pl; p++) {
+    var prefixedProp = prefixes[p] ? prefixes[p] + prop.charAt(0).toUpperCase() + prop.slice(1) : prop;
+    if (el.style[prefixedProp] != null) {
+      return prefixedProp;
+    }
+  }
+}
+var TRANSFORM = testProp("transform");
 var Recorder = {
     version: 1.13,
     swfObject: null,
@@ -147,7 +164,7 @@ var Recorder = {
     _setupFlashContainer: function () {
       this.options.flashContainer = document.createElement("div");
       this.options.flashContainer.setAttribute("id", "recorderFlashContainer");
-      this.options.flashContainer.setAttribute("style", "position: fixed; left: -9999px; top: -9999px; width: 230px; height: 140px; margin-left: 10px; border-top: 6px solid rgba(128, 128, 128, 0.6); border-bottom: 6px solid rgba(128, 128, 128, 0.6); border-radius: 5px 5px; padding-bottom: 1px; padding-right: 1px;");
+      this.options.flashContainer.setAttribute("style", "position: fixed; left: -9999px; top: -9999px; width: 231px; height: 153px; border-top: 6px solid rgba(128, 128, 128, 0.6); border-bottom: 6px solid rgba(128, 128, 128, 0.6); border-radius: 5px 5px; padding-bottom: 1px; padding-right: 1px;");
       document.body.appendChild(this.options.flashContainer);
     },
     _clearFlash: function () {
@@ -172,26 +189,33 @@ var Recorder = {
     },
     _defaultOnShowFlash: function () {
       var flashContainer = Recorder.options.flashContainer;
-      flashContainer.style.left = (window.innerWidth || document.body.offsetWidth) / 2 - 115 + "px";
-      flashContainer.style.top = (window.innerHeight || document.body.offsetHeight) / 2 - 70 + "px";
-      flashContainer.style.width = "auto";
-      flashContainer.style.height = "auto";
+      flashContainer.style.left = "50%";
+      flashContainer.style.top = "50%";
+      flashContainer.style.marginLeft = "-115px";
+      flashContainer.style.marginTop = "-70px";
+      flashContainer.style[TRANSFORM] = "none";
     },
     _defaultOnHideFlash: function () {
       var flashContainer = Recorder.options.flashContainer;
       flashContainer.style.left = 0;
       flashContainer.style.top = 0;
-      flashContainer.style.height = "1px";
-      flashContainer.style.width = "1px";
-      flashContainer.style.overflow = "hidden";
+      flashContainer.style[TRANSFORM] = "scale(0.01)";
     },
     _checkForFlashBlock: function () {
-      window.setTimeout(function () {
-        if (!Recorder._initialized) {
-          Recorder._flashBlockCatched = true;
-          Recorder.triggerEvent("showFlash");
+      var swf = Recorder.swfObject;
+      setTimeout(function () {
+        if (typeof swf.PercentLoaded !== "undefined" && swf.PercentLoaded()) {
+          var loadCheckInterval = setInterval(function () {
+              if (swf.PercentLoaded() === 100) {
+                if (!Recorder._initialized) {
+                  Recorder._flashBlockCatched = true;
+                  Recorder.triggerEvent("showFlash");
+                }
+                clearInterval(loadCheckInterval);
+              }
+            }, 500);
         }
-      }, 2000);
+      }, 200);
     },
     _showFlashRequiredDialog: function () {
       Recorder.options.flashContainer.innerHTML = "<p>Adobe Flash Player 10.1 or newer is required to use this feature.</p><p><a href='http://get.adobe.com/flashplayer' target='_top'>Get it on Adobe.com.</a></p>";
@@ -206,6 +230,7 @@ var Recorder = {
   };
 Recorder.AUDIO_FORMAT_WAV = 0;
 Recorder.AUDIO_FORMAT_MP3 = 1;
+window.Recorder = Recorder;
 if (swfobject == undefined) {
   var swfobject = function () {
       var D = "undefined", r = "object", S = "Shockwave Flash", W = "ShockwaveFlash.ShockwaveFlash", q = "application/x-shockwave-flash", R = "SWFObjectExprInst", x = "onreadystatechange", O = window, j = document, t = navigator, T = false, U = [h], o = [], N = [], I = [], l, Q, E, B, J = false, a = false, n, G, m = true, M = function () {
