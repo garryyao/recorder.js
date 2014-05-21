@@ -193,13 +193,18 @@ var Recorder = {
       flashContainer.style.top = "50%";
       flashContainer.style.marginLeft = "-115px";
       flashContainer.style.marginTop = "-70px";
-      flashContainer.style[TRANSFORM] = "none";
+      flashContainer.style.width = "231px";
+      flashContainer.style.height = "153px";
+      flashContainer.style.borderStyle = "solid";
     },
     _defaultOnHideFlash: function () {
       var flashContainer = Recorder.options.flashContainer;
-      flashContainer.style.left = 0;
-      flashContainer.style.top = 0;
-      flashContainer.style[TRANSFORM] = "scale(0.01)";
+      flashContainer.style.left = "115px";
+      flashContainer.style.top = "70px";
+      flashContainer.style.width = "1px";
+      flashContainer.style.height = "1px";
+      flashContainer.style.overflow = "hidden";
+      flashContainer.style.borderStyle = "none";
     },
     _checkForFlashBlock: function () {
       var swf = Recorder.swfObject;
