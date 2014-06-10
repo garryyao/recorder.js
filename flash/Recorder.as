@@ -102,6 +102,7 @@ package
 		protected var microphoneWasMuted:Boolean;
 		protected var playingProgressTimer:Timer;
 		protected var microphone:Microphone;
+		protected var timeoutIdDetectMicrophone:uint;
 		protected var buffer:ByteArray = new ByteArray();
 		protected var sound:Sound;
 		protected var channel:SoundChannel;
@@ -136,6 +137,7 @@ package
 		protected function recordStop():int
 		{
 			logger.log('stopRecording');
+			flash.utils.clearTimeout(timeoutIdDetectMicrophone);
 			isRecording = false;
 			triggerEvent('recordingStop', {duration: recordingDuration()});
 			microphone.removeEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
@@ -406,7 +408,7 @@ package
 						microphoneWasMuted = false;
 						triggerEvent('hideFlash', '');
 					}
-					flash.utils.setTimeout(function () {
+          timeoutIdDetectMicrophone = flash.utils.setTimeout(function () {
 						if (!isRecording) {
 							microphone.removeEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
 							triggerEvent('recordingCancel', '');
@@ -420,6 +422,7 @@ package
 		
 		protected function notifyRecordingStarted():void
 		{
+			flash.utils.clearTimeout(timeoutIdDetectMicrophone);
 			recordingStartTime = getTimer();
 			triggerEvent('recordingStart', {});
 			logger.log('startRecording');
