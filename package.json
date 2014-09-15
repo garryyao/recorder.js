@@ -1,6 +1,6 @@
 {
   "name": "recorder.js",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "dependencies": {
     "grunt": ">=0.4.1",
     "underscore": "~1.5.2",
