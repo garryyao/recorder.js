@@ -397,7 +397,7 @@ package
 			microphone.codec = "Nellymoser";
 			microphone.setSilenceLevel(0);
 			microphone.rate = sampleRate;
-			microphone.gain = 50;
+			microphone.gain = 100;
 			microphone.addEventListener(StatusEvent.STATUS, function statusHandler(e:Event) {
 				logger.log('Microphone Status Change');
 				if(microphone.muted){
