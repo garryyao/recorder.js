@@ -28,7 +28,10 @@
     
     
       Recorder.initialize({
-        swfSrc: "../recorder.swf"
+        swfSrc: "../recorder.swf",
+        onPrivacyChange: function (allowed) {
+          console.log(allowed);
+        }
       });
 
       function record(){
@@ -38,6 +41,9 @@
           },
           progress: function(milliseconds){
             document.getElementById("time").innerHTML = timecode(milliseconds);
+          },
+          hold: function() {
+              console.log('hold');
           }
         });
       }
@@ -66,6 +72,10 @@
           }
         });
       }
+
+      function setupPrivacy(){
+          Recorder.setupPrivacy();
+      }
   </script>
   
     <div id="wrapper">
@@ -80,6 +90,7 @@
           <a href="javascript:play()"    id="play"   >Play</a> 
           <a href="javascript:stop()"    id="stop"   >Stop</a>
           <a href="javascript:upload()"  id="upload" >Upload (faked)</a>
+          <a href="javascript:setupPrivacy()"  id="setting" >Setting</a>
         </div>
         
         <span id="time">0:00</span>

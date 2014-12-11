@@ -81,8 +81,9 @@ package
 		
 		private var logger : Logger;
 		public function addExternalInterfaceCallbacks():void {
-			ExternalInterface.addCallback("record", 		this.record);
-			ExternalInterface.addCallback("_stop",  		this.stop);
+			ExternalInterface.addCallback("setupPrivacy",   this.setupPrivacy);
+			ExternalInterface.addCallback("record",         this.record);
+			ExternalInterface.addCallback("_stop",          this.stop);
 			ExternalInterface.addCallback("_play",          this.play);
 			ExternalInterface.addCallback("upload",         this.upload);
 			ExternalInterface.addCallback("audioData",      this.audioData);
@@ -115,16 +116,30 @@ package
 		protected var mp3Encoder : ShineMp3Encoder;
 		protected var encoding : Boolean;
 		protected var lastUploadCall : Array;
+
+		protected function setupPrivacy():void
+		{
+			if(!microphone){
+				setupMicrophone();
+			}
+			triggerEvent('privacy', !microphone.muted);
+			showFlash();
+		}
+
 		protected function record():void
 		{
-			if(!microphone){ 
+			if(!microphone){
 				setupMicrophone();
 			}
 
 			microphoneWasMuted = microphone.muted;
-			if(microphoneWasMuted){
+			if(microphoneWasMuted)
+			{
 				logger.log('showFlashRequired');
 				triggerEvent('showFlash','');
+			} else {
+				flash.utils.clearTimeout(timeoutIdDetectMicrophone);
+				timeoutIdDetectMicrophone = flash.utils.setTimeout(noSignal, RECORD_DATA_TIMEOUT * 1000);
 			}
 
 			buffer = new ByteArray();
@@ -364,7 +379,7 @@ package
 		
 		protected function audioData(newData:String=null):String
 		{
-			var delimiter = ";"
+			var delimiter = ";";
 			if(newData){
 				buffer = new ByteArray();
 				var splittedData = newData.split(delimiter);
@@ -386,10 +401,36 @@ package
 		protected function showFlash():void
 		{
 			Security.showSettings(SecurityPanel.PRIVACY);
-			triggerEvent('showFlash','');	
+			triggerEvent('showFlash','');
 		}
 		
-		/* Recording Helper */ 
+		/* Recording Helper */
+		private function noSignal():void
+		{
+			if (!isRecording) {
+				triggerEvent('recordingHold', '');
+				timeoutIdDetectMicrophone = flash.utils.setTimeout(noSignal, RECORD_DATA_TIMEOUT * 1000);
+			}
+		}
+
+		function onMicStatusHandler(event:StatusEvent):void
+		{
+			logger.log('Microphone Status Change');
+
+			triggerEvent('privacy', !microphone.muted);
+
+			if(microphone.muted) {
+				flash.utils.clearTimeout(timeoutIdDetectMicrophone);
+			}
+			else {
+				if (microphoneWasMuted) {
+					microphoneWasMuted = false;
+					triggerEvent('hideFlash', '');
+				}
+				timeoutIdDetectMicrophone = flash.utils.setTimeout(noSignal, RECORD_DATA_TIMEOUT * 1000);
+			}
+		}
+
 		protected function setupMicrophone():void
 		{
 			logger.log('setupMicrophone');
@@ -398,25 +439,7 @@ package
 			microphone.setSilenceLevel(0);
 			microphone.rate = sampleRate;
 			microphone.gain = 100;
-			microphone.addEventListener(StatusEvent.STATUS, function statusHandler(e:Event) {
-				logger.log('Microphone Status Change');
-				if(microphone.muted){
-					triggerEvent('recordingCancel','');
-				}
-				else {
-					if (microphoneWasMuted) {
-						microphoneWasMuted = false;
-						triggerEvent('hideFlash', '');
-					}
-          timeoutIdDetectMicrophone = flash.utils.setTimeout(function () {
-						if (!isRecording) {
-							microphone.removeEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
-							triggerEvent('recordingCancel', '');
-						}
-					}, RECORD_DATA_TIMEOUT * 1000);
-				}
-			});
-
+			microphone.addEventListener(StatusEvent.STATUS, onMicStatusHandler);
 			logger.log('setupMicrophone done: ' + microphone.name + ' ' + microphone.muted);
 		}
 		
@@ -506,6 +529,19 @@ package
 		protected function triggerEvent(eventName:String, arg0:*, arg1:* = null):void
 		{
 			ExternalInterface.call("Recorder.triggerEvent", eventName, arg0, arg1);
+		}
+
+		public static function log(msg:String, caller:Object = null):void{
+			var str:String = "";
+			if(caller){
+				str = getQualifiedClassName(caller);
+				str += ":: ";
+			}
+			str += msg;
+			trace(str);
+			if(ExternalInterface.available){
+				ExternalInterface.call("console.log", str);
+			}
 		}
 	}
 }
