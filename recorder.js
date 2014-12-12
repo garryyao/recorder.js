@@ -31,6 +31,7 @@
       this.bind('showFlash', this.options.onFlashSecurity || this._defaultOnShowFlash);
       this.bind('hideFlash', this._defaultOnHideFlash);
       this.bind('privacy', this.options.onPrivacyChange);
+      this.bind('noMicrophone', this.options.noMicrophone);
       this._loadFlash();
     },
 

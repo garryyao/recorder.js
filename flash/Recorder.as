@@ -119,34 +119,33 @@ package
 
 		protected function setupPrivacy():void
 		{
-			if(!microphone){
-				setupMicrophone();
+			if(setupMicrophone())
+			{
+				triggerEvent('privacy', !microphone.muted);
+				showFlash();
 			}
-			triggerEvent('privacy', !microphone.muted);
-			showFlash();
 		}
 
 		protected function record():void
 		{
-			if(!microphone){
-				setupMicrophone();
-			}
-
-			microphoneWasMuted = microphone.muted;
-			if(microphoneWasMuted)
+			if(setupMicrophone())
 			{
-				logger.log('showFlashRequired');
-				triggerEvent('showFlash','');
-			} else {
-				flash.utils.clearTimeout(timeoutIdDetectMicrophone);
-				timeoutIdDetectMicrophone = flash.utils.setTimeout(noSignal, RECORD_DATA_TIMEOUT * 1000);
+				microphoneWasMuted = microphone.muted;
+				if(microphoneWasMuted)
+				{
+					logger.log('showFlashRequired');
+					triggerEvent('showFlash','');
+				} else {
+					flash.utils.clearTimeout(timeoutIdDetectMicrophone);
+					timeoutIdDetectMicrophone = flash.utils.setTimeout(noSignal, RECORD_DATA_TIMEOUT * 1000);
+				}
+
+				buffer = new ByteArray();
+
+				// To avoid microphone error (PepperFlashPlayer.plugin: 0x2A052 is not valid resource ID.)
+				microphone.removeEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
+				microphone.addEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
 			}
-
-			buffer = new ByteArray();
-
-			// To avoid microphone error (PepperFlashPlayer.plugin: 0x2A052 is not valid resource ID.)
-			microphone.removeEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
-			microphone.addEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
 		}
 		
 		protected function recordStop():int
@@ -431,16 +430,27 @@ package
 			}
 		}
 
-		protected function setupMicrophone():void
+		protected function setupMicrophone():Boolean
 		{
-			logger.log('setupMicrophone');
-			microphone = Microphone.getMicrophone();
-			microphone.codec = "Nellymoser";
-			microphone.setSilenceLevel(0);
-			microphone.rate = sampleRate;
-			microphone.gain = 100;
-			microphone.addEventListener(StatusEvent.STATUS, onMicStatusHandler);
-			logger.log('setupMicrophone done: ' + microphone.name + ' ' + microphone.muted);
+			if(Microphone.names.length == 0)
+			{
+				triggerEvent('noMicrophone', false);
+				return false;
+			}
+			else
+			{
+				if(!microphone){
+					logger.log('setupMicrophone');
+					microphone = Microphone.getMicrophone();
+					microphone.codec = "Nellymoser";
+					microphone.setSilenceLevel(0);
+					microphone.rate = sampleRate;
+					microphone.gain = 100;
+					microphone.addEventListener(StatusEvent.STATUS, onMicStatusHandler);
+					logger.log('setupMicrophone done: ' + microphone.name + ' ' + microphone.muted);
+				}
+				return true;
+			}
 		}
 		
 		protected function notifyRecordingStarted():void
