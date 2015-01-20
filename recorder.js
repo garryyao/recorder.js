@@ -184,7 +184,7 @@
       if (ct.children.length)
         ct = ct.firstElementChild;
       ct.appendChild(flashElement);
-      swfobject.embedSWF(this.options.swfSrc, "recorderFlashObject", "231", "141", "10.1.0", undefined, undefined, {allowscriptaccess: "always"}, undefined, function (e) {
+      swfobject.embedSWF(this.options.swfSrc, "recorderFlashObject", "231", "141", "11.7.0", undefined, undefined, {allowscriptaccess: "always"}, undefined, function (e) {
         if (e.success) {
           Recorder.swfObject = e.ref;
           Recorder._checkForFlashBlock();
@@ -239,7 +239,7 @@
     },
 
     _showFlashRequiredDialog: function () {
-      Recorder.options.flashContainer.innerHTML = "<p>Adobe Flash Player 10.1 or newer is required to use this feature.</p><p><a href='http://get.adobe.com/flashplayer' target='_top'>Get it on Adobe.com.</a></p>";
+      Recorder.options.flashContainer.innerHTML = "<p>Adobe Flash Player 11.7 or newer is required to use this feature.</p><p><a href='http://get.adobe.com/flashplayer' target='_top'>Get it on Adobe.com.</a></p>";
       Recorder.options.flashContainer.style.color = "white";
       Recorder.options.flashContainer.style.backgroundColor = "#777";
       Recorder.options.flashContainer.style.textAlign = "center";
