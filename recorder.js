@@ -30,6 +30,7 @@
 
       this.bind('showFlash', this.options.onFlashSecurity || this._defaultOnShowFlash);
       this.bind('hideFlash', this._defaultOnHideFlash);
+      this.bind('incompatible', this.options.incompatible || this._showFlashRequiredDialog);
       this._loadFlash();
     },
 
@@ -189,7 +190,14 @@
           Recorder.swfObject = e.ref;
           Recorder._checkForFlashBlock();
         } else {
-          Recorder._showFlashRequiredDialog();
+          var userAgent = navigator.userAgent.toLowerCase();
+          // Does not support QIHU SE360 browser 7.x in XP
+          if (/windows nt 5.1/.test(userAgent) && /Chrome\/31.0.1650.63/i.test(userAgent)) {
+            Recorder.triggerEvent("incompatible", {browser: false, flash: false});
+          }
+          else {
+            Recorder.triggerEvent("incompatible", {flash: false});
+          }
         }
       });
     },
