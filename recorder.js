@@ -185,19 +185,25 @@
       if (ct.children.length)
         ct = ct.firstElementChild;
       ct.appendChild(flashElement);
-      swfobject.embedSWF(this.options.swfSrc, "recorderFlashObject", "231", "141", "11.7.0", undefined, undefined, {allowscriptaccess: "always"}, undefined, function (e) {
+      swfobject.embedSWF(this.options.swfSrc, "recorderFlashObject", "231", "141", "11.0.0", undefined, undefined, {allowscriptaccess: "always"}, undefined, function (e) {
+        var userAgent = navigator.userAgent.toLowerCase();
+        var version = swfobject.getFlashPlayerVersion();
+
+        if(/windows nt 5.1/.test(userAgent) && (version.major === 11 && version.minor === 6)) {
+          e.success = false;
+        }
+
         if (e.success) {
           Recorder.swfObject = e.ref;
           Recorder._checkForFlashBlock();
-        } else {
-          var userAgent = navigator.userAgent.toLowerCase();
-          // Does not support QIHU SE360 browser 7.x in XP
-          if (/windows nt 5.1/.test(userAgent) && /Chrome\/31.0.1650.63/i.test(userAgent)) {
-            Recorder.triggerEvent("incompatible", {browser: false, flash: false});
+        }
+        else {
+          var incompatible = {flash: false};
+
+          if (/Chrome/.test(userAgent)) {
+            incompatible.browser = false;
           }
-          else {
-            Recorder.triggerEvent("incompatible", {flash: false});
-          }
+          Recorder.triggerEvent("incompatible", incompatible);
         }
       });
     },
@@ -247,7 +253,7 @@
     },
 
     _showFlashRequiredDialog: function () {
-      Recorder.options.flashContainer.innerHTML = "<p>Adobe Flash Player 11.7 or newer is required to use this feature.</p><p><a href='http://get.adobe.com/flashplayer' target='_top'>Get it on Adobe.com.</a></p>";
+      Recorder.options.flashContainer.innerHTML = "<p>Adobe Flash Player 11.0 or newer is required to use this feature.</p><p><a href='http://get.adobe.com/flashplayer' target='_top'>Get it on Adobe.com.</a></p>";
       Recorder.options.flashContainer.style.color = "white";
       Recorder.options.flashContainer.style.backgroundColor = "#777";
       Recorder.options.flashContainer.style.textAlign = "center";
@@ -265,7 +271,7 @@
   window.Recorder = Recorder;
 
   if (swfobject == undefined) {
-    /*	SWFObject v2.2 <http://code.google.com/p/swfobject/> is released under the MIT License <http://www.opensource.org/licenses/mit-license.php */
+    /*  SWFObject v2.2 <http://code.google.com/p/swfobject/> is released under the MIT License <http://www.opensource.org/licenses/mit-license.php */
     var swfobject = function () {
       var D = "undefined", r = "object", S = "Shockwave Flash", W = "ShockwaveFlash.ShockwaveFlash", q = "application/x-shockwave-flash", R = "SWFObjectExprInst", x = "onreadystatechange", O = window, j = document, t = navigator, T = false, U = [h], o = [], N = [], I = [], l, Q, E, B, J = false, a = false, n, G, m = true, M = function () {
         var aa = typeof j.getElementById != D && typeof j.getElementsByTagName != D && typeof j.createElement != D, ah = t.userAgent.toLowerCase(), Y = t.platform.toLowerCase(), ae = Y ? /win/.test(Y) : /win/.test(ah), ac = Y ? /mac/.test(Y) : /mac/.test(ah), af = /webkit/.test(ah) ? parseFloat(ah.replace(/^.*webkit\/(\d+(\.\d+)?).*$/, "$1")) : false, X = !+"\v1", ag = [0, 0, 0], ab = null;
