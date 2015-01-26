@@ -200,7 +200,7 @@
         else {
           var incompatible = {flash: false};
 
-          if (/Chrome/.test(userAgent)) {
+          if (/chrome/.test(userAgent)) {
             incompatible.browser = false;
           }
           Recorder.triggerEvent("incompatible", incompatible);
