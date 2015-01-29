@@ -244,7 +244,7 @@
       // Gives some time for flash loading.
       setTimeout(function () {
         // Ensure Flash Player's PercentLoaded method is available and returns a value
-        if (typeof swf.PercentLoaded !== "undefined" && swf.PercentLoaded()) {
+        if ("PercentLoaded" in swf) {
           // Set up a timer to periodically check value of PercentLoaded
           var loadCheckInterval = setInterval(function () {
             // Once value == 100 (fully loaded) we can do whatever we want
