@@ -225,8 +225,18 @@
       flashContainer.style.top = "-140px";
     },
 
+    /*
+    * Possible ways of checking for a blocked flash on user screen:
+    * 1. flash runtime blocked by browser plugin
+    * 2. swf file is rejected by browser plugin
+    */
     _checkForFlashBlock: function () {
       var swf = Recorder.swfObject;
+
+      function onFlashBlocked() {
+        Recorder._flashBlockCatched = true;
+        Recorder.triggerEvent("showFlash");
+      }
 
       // The following technique detect when flash is considered "fully loaded".
       // http://learnswfobject.com/advanced-topics/executing-javascript-when-the-swf-has-finished-loading/
@@ -241,13 +251,14 @@
             if (swf.PercentLoaded() === 100) {
               // Check for flash blocked
               if (!Recorder._initialized) {
-                Recorder._flashBlockCatched = true;
-                Recorder.triggerEvent("showFlash");
+                onFlashBlocked();
               }
               // Cleanup
               clearInterval(loadCheckInterval);
             }
           }, 500);
+        } else {
+          onFlashBlocked();
         }
       }, 200);
     },
