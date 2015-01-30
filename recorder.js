@@ -203,17 +203,22 @@ var Recorder = {
   },
   _checkForFlashBlock: function () {
     var swf = Recorder.swfObject;
+    function onFlashBlocked() {
+      Recorder._flashBlockCatched = true;
+      Recorder.triggerEvent("showFlash");
+    }
     setTimeout(function () {
-      if (typeof swf.PercentLoaded !== "undefined" && swf.PercentLoaded()) {
+      if ("PercentLoaded" in swf) {
         var loadCheckInterval = setInterval(function () {
           if (swf.PercentLoaded() === 100) {
             if (!Recorder._initialized) {
-              Recorder._flashBlockCatched = true;
-              Recorder.triggerEvent("showFlash");
+              onFlashBlocked();
             }
             clearInterval(loadCheckInterval);
           }
         }, 500);
+      } else {
+        onFlashBlocked();
       }
     }, 200);
   },
