@@ -30,6 +30,7 @@
 
       this.bind('showFlash', this.options.onFlashSecurity || this._defaultOnShowFlash);
       this.bind('hideFlash', this._defaultOnHideFlash);
+      this.bind('incompatible', this.options.incompatible || this._showFlashRequiredDialog);
       this.bind('privacy', this.options.onPrivacyChange);
       this.bind('noMicrophone', this.options.noMicrophone);
       this._loadFlash();
@@ -47,13 +48,16 @@
       options = options || {};
       this.clearBindings("recordingStart");
       this.clearBindings("recordingProgress");
+      this.clearBindings("recordingCancel");
 
       this.bind('recordingStart', this._defaultOnHideFlash);
+      this.bind('recordingCancel', this._defaultOnHideFlash);
+      this.bind('recordingCancel', this._loadFlash);
 
       this.bind('recordingStart', options['start']);
       this.bind('recordingProgress', options['progress']);
-      this.bind('recordingHold', options['hold']);
-
+      this.bind('recordingCancel', options['cancel']);
+			this.bind('recordingHold', options['hold']);
       this.flashInterface().record();
     },
 
@@ -187,12 +191,25 @@
       if (ct.children.length)
         ct = ct.firstElementChild;
       ct.appendChild(flashElement);
-      swfobject.embedSWF(this.options.swfSrc, "recorderFlashObject", "231", "141", "10.1.0", undefined, undefined, {allowscriptaccess: "always"}, undefined, function (e) {
+      swfobject.embedSWF(this.options.swfSrc, "recorderFlashObject", "231", "141", "11.0.0", undefined, undefined, {allowscriptaccess: "always"}, undefined, function (e) {
+        var userAgent = navigator.userAgent.toLowerCase();
+        var version = swfobject.getFlashPlayerVersion();
+
+        if(/windows nt 5.1/.test(userAgent) && (version.major === 11 && version.minor === 6)) {
+          e.success = false;
+        }
+
         if (e.success) {
           Recorder.swfObject = e.ref;
           Recorder._checkForFlashBlock();
-        } else {
-          Recorder._showFlashRequiredDialog();
+        }
+        else {
+          var incompatible = {flash: false};
+
+          if (/chrome/.test(userAgent)) {
+            incompatible.browser = false;
+          }
+          Recorder.triggerEvent("incompatible", incompatible);
         }
       });
     },
@@ -214,8 +231,18 @@
       flashContainer.style.top = "-140px";
     },
 
+    /*
+    * Possible ways of checking for a blocked flash on user screen:
+    * 1. flash runtime blocked by browser plugin
+    * 2. swf file is rejected by browser plugin
+    */
     _checkForFlashBlock: function () {
       var swf = Recorder.swfObject;
+
+      function onFlashBlocked() {
+        Recorder._flashBlockCatched = true;
+        Recorder.triggerEvent("showFlash");
+      }
 
       // The following technique detect when flash is considered "fully loaded".
       // http://learnswfobject.com/advanced-topics/executing-javascript-when-the-swf-has-finished-loading/
@@ -223,26 +250,27 @@
       // Gives some time for flash loading.
       setTimeout(function () {
         // Ensure Flash Player's PercentLoaded method is available and returns a value
-        if (typeof swf.PercentLoaded !== "undefined" && swf.PercentLoaded()) {
+        if ("PercentLoaded" in swf) {
           // Set up a timer to periodically check value of PercentLoaded
           var loadCheckInterval = setInterval(function () {
             // Once value == 100 (fully loaded) we can do whatever we want
             if (swf.PercentLoaded() === 100) {
               // Check for flash blocked
               if (!Recorder._initialized) {
-                Recorder._flashBlockCatched = true;
-                Recorder.triggerEvent("showFlash");
+                onFlashBlocked();
               }
               // Cleanup
               clearInterval(loadCheckInterval);
             }
           }, 500);
+        } else {
+          onFlashBlocked();
         }
       }, 200);
     },
 
     _showFlashRequiredDialog: function () {
-      Recorder.options.flashContainer.innerHTML = "<p>Adobe Flash Player 10.1 or newer is required to use this feature.</p><p><a href='http://get.adobe.com/flashplayer' target='_top'>Get it on Adobe.com.</a></p>";
+      Recorder.options.flashContainer.innerHTML = "<p>Adobe Flash Player 11.0 or newer is required to use this feature.</p><p><a href='http://get.adobe.com/flashplayer' target='_top'>Get it on Adobe.com.</a></p>";
       Recorder.options.flashContainer.style.color = "white";
       Recorder.options.flashContainer.style.backgroundColor = "#777";
       Recorder.options.flashContainer.style.textAlign = "center";
@@ -260,7 +288,7 @@
   window.Recorder = Recorder;
 
   if (swfobject == undefined) {
-    /*	SWFObject v2.2 <http://code.google.com/p/swfobject/> is released under the MIT License <http://www.opensource.org/licenses/mit-license.php */
+    /*  SWFObject v2.2 <http://code.google.com/p/swfobject/> is released under the MIT License <http://www.opensource.org/licenses/mit-license.php */
     var swfobject = function () {
       var D = "undefined", r = "object", S = "Shockwave Flash", W = "ShockwaveFlash.ShockwaveFlash", q = "application/x-shockwave-flash", R = "SWFObjectExprInst", x = "onreadystatechange", O = window, j = document, t = navigator, T = false, U = [h], o = [], N = [], I = [], l, Q, E, B, J = false, a = false, n, G, m = true, M = function () {
         var aa = typeof j.getElementById != D && typeof j.getElementsByTagName != D && typeof j.createElement != D, ah = t.userAgent.toLowerCase(), Y = t.platform.toLowerCase(), ae = Y ? /win/.test(Y) : /win/.test(ah), ac = Y ? /mac/.test(Y) : /mac/.test(ah), af = /webkit/.test(ah) ? parseFloat(ah.replace(/^.*webkit\/(\d+(\.\d+)?).*$/, "$1")) : false, X = !+"\v1", ag = [0, 0, 0], ab = null;
