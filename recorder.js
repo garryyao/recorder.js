@@ -185,7 +185,7 @@
       if (ct.children.length)
         ct = ct.firstElementChild;
       ct.appendChild(flashElement);
-      swfobject.embedSWF(this.options.swfSrc, "recorderFlashObject", "231", "141", "11.0.0", undefined, undefined, {allowscriptaccess: "always"}, undefined, function (e) {
+      swfobject.embedSWF(this.options.swfSrc, "recorderFlashObject", "500", "500", "11.0.0", undefined, undefined, {allowscriptaccess: "always"}, undefined, function (e) {
         var userAgent = navigator.userAgent.toLowerCase();
         var version = swfobject.getFlashPlayerVersion();
 
