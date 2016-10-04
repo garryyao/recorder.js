@@ -81,8 +81,9 @@ package
 		
 		private var logger : Logger;
 		public function addExternalInterfaceCallbacks():void {
-			ExternalInterface.addCallback("record", 		this.record);
-			ExternalInterface.addCallback("_stop",  		this.stop);
+			ExternalInterface.addCallback("setupPrivacy",   this.setupPrivacy);
+			ExternalInterface.addCallback("record",         this.record);
+			ExternalInterface.addCallback("_stop",          this.stop);
 			ExternalInterface.addCallback("_play",          this.play);
 			ExternalInterface.addCallback("upload",         this.upload);
 			ExternalInterface.addCallback("audioData",      this.audioData);
@@ -115,23 +116,36 @@ package
 		protected var mp3Encoder : ShineMp3Encoder;
 		protected var encoding : Boolean;
 		protected var lastUploadCall : Array;
+
+		protected function setupPrivacy():void
+		{
+			if(setupMicrophone())
+			{
+				triggerEvent('privacy', !microphone.muted);
+				showFlash();
+			}
+		}
+
 		protected function record():void
 		{
-			if(!microphone){ 
-				setupMicrophone();
+			if(setupMicrophone())
+			{
+				microphoneWasMuted = microphone.muted;
+				if(microphoneWasMuted)
+				{
+					logger.log('showFlashRequired');
+					triggerEvent('showFlash','');
+				} else {
+					flash.utils.clearTimeout(timeoutIdDetectMicrophone);
+					timeoutIdDetectMicrophone = flash.utils.setTimeout(noSignal, RECORD_DATA_TIMEOUT * 1000);
+				}
+
+				buffer = new ByteArray();
+
+				// To avoid microphone error (PepperFlashPlayer.plugin: 0x2A052 is not valid resource ID.)
+				microphone.removeEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
+				microphone.addEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
 			}
-
-			microphoneWasMuted = microphone.muted;
-			if(microphoneWasMuted){
-				logger.log('showFlashRequired');
-				triggerEvent('showFlash','');
-			}
-
-			buffer = new ByteArray();
-
-			// To avoid microphone error (PepperFlashPlayer.plugin: 0x2A052 is not valid resource ID.)
-			microphone.removeEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
-			microphone.addEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
 		}
 		
 		protected function recordStop():int
@@ -364,7 +378,7 @@ package
 		
 		protected function audioData(newData:String=null):String
 		{
-			var delimiter = ";"
+			var delimiter = ";";
 			if(newData){
 				buffer = new ByteArray();
 				var splittedData = newData.split(delimiter);
@@ -386,38 +400,57 @@ package
 		protected function showFlash():void
 		{
 			Security.showSettings(SecurityPanel.PRIVACY);
-			triggerEvent('showFlash','');	
+			triggerEvent('showFlash','');
 		}
 		
-		/* Recording Helper */ 
-		protected function setupMicrophone():void
+		/* Recording Helper */
+		private function noSignal():void
 		{
-			logger.log('setupMicrophone');
-			microphone = Microphone.getMicrophone();
-			microphone.codec = "Nellymoser";
-			microphone.setSilenceLevel(0);
-			microphone.rate = sampleRate;
-			microphone.gain = 100;
-			microphone.addEventListener(StatusEvent.STATUS, function statusHandler(e:Event) {
-				logger.log('Microphone Status Change');
-				if(microphone.muted){
-					triggerEvent('recordingCancel','');
-				}
-				else {
-					if (microphoneWasMuted) {
-						microphoneWasMuted = false;
-						triggerEvent('hideFlash', '');
-					}
-          timeoutIdDetectMicrophone = flash.utils.setTimeout(function () {
-						if (!isRecording) {
-							microphone.removeEventListener(SampleDataEvent.SAMPLE_DATA, recordSampleDataHandler);
-							triggerEvent('recordingCancel', '');
-						}
-					}, RECORD_DATA_TIMEOUT * 1000);
-				}
-			});
+			if (!isRecording) {
+				triggerEvent('recordingHold', '');
+				timeoutIdDetectMicrophone = flash.utils.setTimeout(noSignal, RECORD_DATA_TIMEOUT * 1000);
+			}
+		}
 
-			logger.log('setupMicrophone done: ' + microphone.name + ' ' + microphone.muted);
+		function onMicStatusHandler(event:StatusEvent):void
+		{
+			logger.log('Microphone Status Change');
+
+			triggerEvent('privacy', !microphone.muted);
+
+			if(microphone.muted) {
+				flash.utils.clearTimeout(timeoutIdDetectMicrophone);
+			}
+			else {
+				if (microphoneWasMuted) {
+					microphoneWasMuted = false;
+					triggerEvent('hideFlash', '');
+				}
+				timeoutIdDetectMicrophone = flash.utils.setTimeout(noSignal, RECORD_DATA_TIMEOUT * 1000);
+			}
+		}
+
+		protected function setupMicrophone():Boolean
+		{
+			if(Microphone.names.length == 0)
+			{
+				triggerEvent('noMicrophone', false);
+				return false;
+			}
+			else
+			{
+				if(!microphone){
+					logger.log('setupMicrophone');
+					microphone = Microphone.getMicrophone();
+					microphone.codec = "Nellymoser";
+					microphone.setSilenceLevel(0);
+					microphone.rate = sampleRate;
+					microphone.gain = 100;
+					microphone.addEventListener(StatusEvent.STATUS, onMicStatusHandler);
+					logger.log('setupMicrophone done: ' + microphone.name + ' ' + microphone.muted);
+				}
+				return true;
+			}
 		}
 		
 		protected function notifyRecordingStarted():void
@@ -506,6 +539,19 @@ package
 		protected function triggerEvent(eventName:String, arg0:*, arg1:* = null):void
 		{
 			ExternalInterface.call("Recorder.triggerEvent", eventName, arg0, arg1);
+		}
+
+		public static function log(msg:String, caller:Object = null):void{
+			var str:String = "";
+			if(caller){
+				str = getQualifiedClassName(caller);
+				str += ":: ";
+			}
+			str += msg;
+			trace(str);
+			if(ExternalInterface.available){
+				ExternalInterface.call("console.log", str);
+			}
 		}
 	}
 }

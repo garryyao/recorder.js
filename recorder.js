@@ -31,11 +31,17 @@
       this.bind('showFlash', this.options.onFlashSecurity || this._defaultOnShowFlash);
       this.bind('hideFlash', this._defaultOnHideFlash);
       this.bind('incompatible', this.options.incompatible || this._showFlashRequiredDialog);
+      this.bind('privacy', this.options.onPrivacyChange);
+      this.bind('noMicrophone', this.options.noMicrophone);
       this._loadFlash();
     },
 
     clear: function () {
       Recorder._events = {};
+    },
+
+    setupPrivacy: function(){
+      this.flashInterface().setupPrivacy();
     },
 
     record: function (options) {
@@ -51,7 +57,7 @@
       this.bind('recordingStart', options['start']);
       this.bind('recordingProgress', options['progress']);
       this.bind('recordingCancel', options['cancel']);
-
+			this.bind('recordingHold', options['hold']);
       this.flashInterface().record();
     },
 
